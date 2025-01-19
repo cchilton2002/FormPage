@@ -2,10 +2,12 @@ import { useRef, useState, useEffect } from "react"
 import React from 'react'
 import { faCheck,faTimes,faInfoCircle } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import userEvent from "@testing-library/user-event";
+import axios from "./api/axios";
+
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const REGISTER_URL = '/register';
 
 const Register = () => {
     const userRef = useRef();
@@ -58,10 +60,41 @@ const Register = () => {
             setErrMessage("Invalid Entry");
             return;
         }
+        try {
+            const response = await axios.post(REGISTER_URL, 
+                JSON.stringify({ user,password }),
+                {
+                    headers: { 'Content-Type': 'application/json'},
+                    withCredentials: true
+                }
+            );
+            console.log(response.data);
+            console.log(JSON.stringify(response));
+            setSuccess(true);
+            // clear input fields
+        } catch (err) {
+            if (!err?.response) {
+                setErrMessage('No server response');
+            } else if (err.response?.status === 409) {
+                setErrMessage('Username taken');
+            } else {
+                setErrMessage('Registration Failed');
+            }
+            errRef.current.focus();
+        }
     }
 
 
   return (
+    <>
+    {success ? (
+        <section>
+            <h1>Success!!</h1>
+            <p>
+                <a href="#">Sign In</a>
+            </p>
+        </section>
+    ) : (
     <section>
         <p ref={errRef} className={errMessage ? "errMessage" : "offscreen"} aria-live="assertive">{errMessage}</p>
         <h1>Register</h1>
@@ -154,6 +187,8 @@ const Register = () => {
             </span>
         </p>
     </section>
+    )}
+    </>
   )
 }
 
