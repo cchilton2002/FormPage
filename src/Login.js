@@ -1,7 +1,13 @@
 import React from 'react'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useContext } from 'react';
+import AuthContext from './context/AuthProvider';
+import axios from './api/axios';
+
+const LOGIN_URL = '/auth'
+
 
 const Login = () => {
+    const { setAuth } = useContext(AuthContext);
     const userRef = useRef();
     const errRef = useRef();
 
@@ -22,11 +28,35 @@ const Login = () => {
     }, [user,password])
 
     const handleSubmit = async (e) => {
-        console.log(user,password);
-        setUser('');
-        setPassword('');
-        setSuccess(true);
         e.preventDefault();
+        try {
+            const response = await axios.post(LOGIN_URL, 
+                JSON.stringify({ user, pwd: password }),
+                {
+                    headers: { 'Content-Type': 'application/json'},
+                    withCredentials: true
+                }
+            );
+            console.log(JSON.stringify(response?.data));
+            const accessToken = response?.data?.accessToken;
+            const roles = response?.data?.roles;
+            setAuth({ user, password, roles, accessToken });
+            setUser('');
+            setPassword('');
+            setSuccess(true);
+        } catch (err) {
+            if (!err?.response) {
+                setErrMsg('No server response');
+            } else if (err.response?.status === 400) {
+                setErrMsg('Missing username or password');
+            } else if (err.response?.status === 401) {
+                setErrMsg('Unauthorized');
+            } else {
+                setErrMsg('Login failed');
+            }
+            errRef.current.focus();
+        }
+
     }
 
     return (
@@ -36,7 +66,7 @@ const Login = () => {
                     <h1>You are logged in</h1>
                     <br />
                     <p>
-                        <a href='#'>Go to home</a>
+                        <a href=''>Go to home</a>
                     </p>
                 </section>
             ) : (
@@ -68,7 +98,7 @@ const Login = () => {
                 Need an Account?<br />
                 <span className='line'>
                     {/*put router link here*/}
-                    <a href='#'>Sign Up</a>
+                    <a href=''>Sign Up</a>
                 </span>
             </p>
         </section>
