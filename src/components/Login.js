@@ -1,20 +1,24 @@
-import React from 'react'
-import { useRef, useState, useEffect, useContext } from 'react';
-import AuthContext from './context/AuthProvider';
-import axios from './api/axios';
+import { useRef, useState, useEffect } from 'react';
+import useAuth from '../hooks/useAuth';
+import axios from '../api/axios';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const LOGIN_URL = '/auth'
 
 
 const Login = () => {
-    const { setAuth } = useContext(AuthContext);
+    const { setAuth } = useAuth;
+
+    const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from?.pathname || '/';
+
     const userRef = useRef();
     const errRef = useRef();
 
     const [user, setUser] = useState('');
     const [password, setPassword] = useState('');
     const [errMsg, setErrMsg] = useState('');
-    const [success, setSuccess] = useState(false);
 
 
     useEffect(() => {
@@ -43,7 +47,7 @@ const Login = () => {
             setAuth({ user, password, roles, accessToken });
             setUser('');
             setPassword('');
-            setSuccess(true);
+            navigate(from, { replace: true });
         } catch (err) {
             if (!err?.response) {
                 setErrMsg('No server response');
@@ -60,16 +64,6 @@ const Login = () => {
     }
 
     return (
-        <>
-            {success ? (
-                <section>
-                    <h1>You are logged in</h1>
-                    <br />
-                    <p>
-                        <a href=''>Go to home</a>
-                    </p>
-                </section>
-            ) : (
         <section>
             <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live='assertive'>{errMsg}</p>
             <h1>Sign In</h1>
@@ -102,8 +96,6 @@ const Login = () => {
                 </span>
             </p>
         </section>
-        )}
-        </>
     )
 }
 
